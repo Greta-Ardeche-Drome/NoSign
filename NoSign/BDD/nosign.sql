@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : mer. 12 mars 2025 à 13:20
+-- Généré le : mer. 12 mars 2025 à 15:46
 -- Version du serveur : 11.5.2-MariaDB
 -- Version de PHP : 8.3.14
 
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS `presences` (
   `heure_scan` time NOT NULL DEFAULT curtime(),
   PRIMARY KEY (`id`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Déchargement des données de la table `presences`
@@ -78,12 +78,13 @@ INSERT INTO `presences` (`id`, `uid`, `date_scan`, `heure_scan`) VALUES
 (32, '041e11927e6780', '2025-03-11', '14:57:11'),
 (34, '04113b827e6780', '2025-03-11', '15:31:03'),
 (35, '04315f7a816780', '2025-03-11', '15:31:06'),
-(38, '041e11927e6780', '2025-03-12', '12:43:56'),
-(39, '041e0d927e6780', '2025-03-12', '12:43:56'),
-(43, '04113b827e6780', '2025-03-12', '12:51:07'),
-(44, '04315f7a816780', '2025-03-12', '12:51:08'),
 (45, '04113b827e6780', '2025-03-12', '08:58:00'),
-(46, '04315f7a816780', '2025-03-12', '07:00:00');
+(46, '04315f7a816780', '2025-03-12', '07:00:00'),
+(56, '041E11927E6780', '2025-03-12', '16:23:44'),
+(57, '04113B827E6780', '2025-03-12', '16:23:49'),
+(58, '041e0d927e6780', '2025-03-12', '15:24:12'),
+(59, '041e11927e6780', '2025-03-12', '08:32:00'),
+(60, '04315F7A816780', '2025-03-12', '16:26:02');
 
 -- --------------------------------------------------------
 
