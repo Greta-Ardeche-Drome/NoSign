@@ -118,6 +118,50 @@ while ($row = $students_result->fetch_assoc()) {
     $students[] = $row;
 }
 
+// Gestion de l'import CSV
+if (isset($_POST['import']) && isset($_FILES['csv_file'])) {
+    $file = $_FILES['csv_file'];
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $csvData = file_get_contents($file['tmp_name']);
+        $lines = explode(PHP_EOL, $csvData);
+        
+        // Supprimer la première ligne (l'en-tête)
+        array_shift($lines);
+
+        // Préparer une requête pour l'insertion
+        $query = "INSERT INTO etudiants (nom, prenom, uid) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        
+        foreach ($lines as $line) {
+            // S'assurer que la ligne n'est pas vide
+            if (!empty($line)) {
+                $fields = str_getcsv($line, ";");  // Assurez-vous d'utiliser le bon délimiteur
+                if (count($fields) == 3) {  // Assurez-vous qu'il y a bien 3 champs : nom, prénom, uid
+                    $nom = trim($fields[0]);
+                    $prenom = trim($fields[1]);
+                    $uid = trim($fields[2]);
+
+                    // Vérifier si l'UID existe déjà dans la base de données
+                    $checkQuery = "SELECT id FROM etudiants WHERE uid = ?";
+                    $checkStmt = $conn->prepare($checkQuery);
+                    $checkStmt->bind_param("s", $uid);
+                    $checkStmt->execute();
+                    $checkStmt->store_result();
+
+                    if ($checkStmt->num_rows == 0) { // Si l'UID n'existe pas encore
+                        $stmt->bind_param("sss", $nom, $prenom, $uid);
+                        $stmt->execute();
+                    }
+                }
+            }
+        }
+        echo "<p>Importation terminée avec succès !</p>";
+    } else {
+        echo "<p>Erreur lors du téléchargement du fichier.</p>";
+    }
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? null;
     
@@ -216,6 +260,13 @@ $presences_stmt->close();
             </tr>
         <?php } ?>
     </table>
+
+    <h2>Ajouter des étudiants via un fichier CSV</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label for="csv_file">Sélectionner le fichier CSV :</label>
+    <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+    <button type="submit" name="import">Importer</button>
+</form>
 
     <h2>Administration des présences</h2>
 
