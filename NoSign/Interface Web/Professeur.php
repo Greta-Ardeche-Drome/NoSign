@@ -1,5 +1,20 @@
 <?php
 session_start();
+
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION["user"]) || !isset($_SESSION["role"])) {
+    header("Location: login.html"); // Redirige vers la page de connexion
+    exit();
+}
+
+// Vérifier si l'utilisateur a le bon rôle (entreprise ou administrateur)
+if ($_SESSION["role"] !== "professeurs" && $_SESSION["role"] !== "administrateur") {
+    echo "Accès refusé. Vous n'avez pas les permissions pour voir cette page.";
+    exit();
+}
+?>
+<?php
+session_start();
 $servername = "127.0.0.1";
 $username = "root";
 $password = "";
@@ -121,6 +136,9 @@ if (isset($_GET['date'])) {
     <link rel="stylesheet" href="styleProf.css">
 </head>
 <body>
+<form action="logout.php" method="POST" style="position: absolute; top: 10px; right: 10px;">
+    <button type="submit">Se déconnecter</button>
+</form>
 
 <h2>Gestion des présences</h2>
 <table>

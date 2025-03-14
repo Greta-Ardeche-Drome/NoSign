@@ -1,4 +1,19 @@
 <?php
+session_start();
+
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION["user"]) || !isset($_SESSION["role"])) {
+    header("Location: login.html"); // Redirige vers la page de connexion
+    exit();
+}
+
+// Vérifier si l'utilisateur a le bon rôle
+if ($_SESSION["role"] !== "administrateur") {
+    echo "Accès refusé. Vous n'avez pas les permissions pour voir cette page.";
+    exit();
+}
+?>
+<?php
 session_start(); // Démarrer la session pour stocker les infos utilisateur
 
 // Connexion à la base de données
@@ -204,8 +219,10 @@ $presences_stmt->close();
 </head>
 <body>
     <h2>Gestion des utilisateurs</h2>
-    <a href="logout.php">Déconnexion</a>
     
+    <form action="logout.php" method="POST" style="position: absolute; top: 10px; right: 10px;">
+    <button type="submit">Se déconnecter</button>
+    </form>
     <h3>Ajouter un utilisateur</h3>
     <form method="POST">
         <input type="hidden" name="action" value="ajouter">
