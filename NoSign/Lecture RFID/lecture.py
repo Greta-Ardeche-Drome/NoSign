@@ -1,6 +1,3 @@
-#LECTURE DE LA CARTE ETUDIANTE AVEC L'EMPREINTE
-#FONCTIONNE AVEC LE CODE FINGERPRINT SUR L'ARDUINO
-
 import time
 import serial
 import mysql.connector
@@ -28,34 +25,94 @@ reader = r[0]
 connection = reader.createConnection()
 
 # Connexion au capteur d'empreintes digitales (Arduino)
-ser = serial.Serial('COM10', 9600, timeout=2)  # Vérifie que COM10 est correct
+ser = serial.Serial('COM10', 9600, timeout=1)  # Timeout plus court
+time.sleep(2)  # Attendre que la connexion soit établie
+
+def clear_serial_buffer():
+    """Vide le buffer série"""
+    ser.reset_input_buffer()
+    ser.reset_output_buffer()
+    time.sleep(0.1)
 
 def get_fingerprint():
     """
     Attend qu'une empreinte valide soit détectée par le capteur d'empreintes.
     Renvoie l'ID de l'empreinte si valide, sinon None.
     """
-    ser.flush()  # Nettoie le buffer avant de commencer
     print("🟡 En attente d'une empreinte digitale... (Pose ton doigt)")
-
-    timeout = time.time() + 10  # Temps max d'attente de 10s
-
+    
+    # Vider les buffers
+    clear_serial_buffer()
+    
+    # Attendre que l'Arduino demande de choisir une option
+    wait_start = time.time()
+    option_prompt_received = False
+    
+    while time.time() - wait_start < 5:  # 5 secondes maximum
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            print(f"📡 Arduino dit: {response}")
+            
+            if "Please choose an option" in response:
+                option_prompt_received = True
+                break
+        time.sleep(0.1)
+    
+    if not option_prompt_received:
+        print("⚠️ L'Arduino ne demande pas d'option. Tentative d'envoi direct...")
+    
+    # Envoyer l'option 2 (format utilisé dans le code fonctionnel)
+    print("📤 Envoi de l'option 2 à l'Arduino...")
+    ser.write(b"2\n")
+    time.sleep(0.5)
+    
+    # Lire confirmation
+    confirmation_received = False
+    for _ in range(5):  # Lire jusqu'à 5 lignes
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            print(f"📡 Réponse: {response}")
+            if "Image taken" in response or "Found ID" in response:
+                confirmation_received = True
+    
+    if not confirmation_received:
+        print("⚠️ Pas de confirmation de l'Arduino. Tentative alternative...")
+        # Essai alternatif avec caractère retour chariot
+        ser.write(b"2\r\n")
+        time.sleep(0.5)
+    
+    # Commencer à lire les réponses pour une empreinte
+    timeout = time.time() + 20  # Temps max d'attente de 20s
+    
     while time.time() < timeout:
-        ser.write(b'CHECK\n')  # Envoi de la commande
-        time.sleep(0.5)  # Petite pause avant lecture
-
-        response = ser.readline().decode().strip()  # Lecture du retour série
-        print(f"📡 Réponse du capteur : {response}")  # Debug pour voir la réponse
-
-        if response.startswith("Found ID #"):
-            fingerprint_id = int(response.split("#")[1].split(" ")[0])
-            print(f"✅ Empreinte détectée ! ID: {fingerprint_id}")
-            return fingerprint_id
-        elif response == "NO MATCH":
-            print("❌ Empreinte non reconnue, veuillez réessayer...")
-        elif response == "ERROR":
-            print("⚠️ Erreur du capteur, recommencez.")
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            print(f"📡 Arduino: {response}")
+            
+            # Vérifier les différentes réponses possibles
+            if "Found ID #" in response:
+                try:
+                    # Extraire l'ID de l'empreinte (différentes formats possibles)
+                    if "#" in response:
+                        parts = response.split("#")
+                        if len(parts) > 1:
+                            id_part = parts[1].split(" ")[0]
+                            fingerprint_id = int(id_part)
+                            print(f"✅ Empreinte détectée ! ID: {fingerprint_id}")
+                            return fingerprint_id
+                except Exception as e:
+                    print(f"⚠️ Erreur lors de l'extraction de l'ID: {e}")
+            
+            elif "No finger detected" in response:
+                # Normal, continue à attendre
+                pass
+            elif "Did not find a match" in response:
+                print("❌ Empreinte non reconnue. Réessayez.")
+            elif "Communication error" in response:
+                print("⚠️ Erreur de communication avec le capteur.")
         
+        time.sleep(0.1)  # Petite pause pour éviter de saturer le CPU
+    
     print("🕒 Temps d'attente dépassé, aucune empreinte détectée.")
     return None
 
@@ -94,6 +151,47 @@ def add_scan(uid, fingerprint_id):
     except mysql.connector.Error as err:
         print(f"❌ Erreur de connexion à la base de données : {err}")
 
+def restart_arduino():
+    """Tente de redémarrer la communication avec l'Arduino"""
+    print("🔄 Réinitialisation de la communication avec l'Arduino...")
+    clear_serial_buffer()
+    
+    # Lire les messages en attente
+    while ser.in_waiting > 0:
+        response = ser.readline().decode().strip()
+        print(f"🧹 Nettoyage buffer: {response}")
+    
+    # Attendre le prompt "Ready to enroll"
+    wait_end = time.time() + 5
+    while time.time() < wait_end:
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            print(f"🔄 Arduino: {response}")
+            if "Ready to enroll" in response:
+                print("✅ Arduino prêt pour le prochain scan.")
+                return True
+        time.sleep(0.1)
+    
+    print("⚠️ Arduino non réinitialisé, mais on continue...")
+    return False
+
+# Initialisation
+print("🔄 Attente de l'initialisation de l'Arduino...")
+time.sleep(3)  # Attendre plus longtemps au démarrage
+
+# Vider les messages d'initialisation
+timeout_init = time.time() + 10
+while time.time() < timeout_init and ser.in_waiting > 0:
+    response = ser.readline().decode().strip()
+    print(f"🔄 Arduino: {response}")
+    if "Ready to enroll or recognize" in response:
+        print("✅ Arduino initialisé avec succès")
+        break
+    time.sleep(0.1)
+
+clear_serial_buffer()
+print("🟢 Système prêt. En attente d'une carte RFID...")
+
 while True:
     try:
         connection.connect()
@@ -113,9 +211,12 @@ while True:
                 add_scan(uid, fingerprint_id)
             else:
                 print("❌ Aucun scan d'empreinte détecté.")
+            
+            # Réinitialiser l'Arduino pour le prochain scan
+            restart_arduino()
         
         time.sleep(1)
 
     except Exception as e:
-        print("🚨 Erreur lors de la lecture RFID ou empreinte digitale...")
+        print(f"🚨 Erreur lors de la lecture RFID ou empreinte digitale: {e}")
         time.sleep(1)
