@@ -82,7 +82,7 @@ def get_fingerprint():
         time.sleep(0.5)
     
     # Commencer à lire les réponses pour une empreinte
-    timeout = time.time() + 20  # Temps max d'attente de 20s
+    timeout = time.time() + 15  # Temps max d'attente de 15s
     
     while time.time() < timeout:
         if ser.in_waiting > 0:
