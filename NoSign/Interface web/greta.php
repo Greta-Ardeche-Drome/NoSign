@@ -32,7 +32,6 @@ if (isset($_GET['month']) && isset($_GET['year'])) {
           WHERE DATE_FORMAT(p.date_scan, '%Y-%m') = ?
           ORDER BY p.date_scan, e.nom, e.prenom";
 
-
     $date_filter = $selected_year . "-" . $selected_month;
     $stmt = $conn->prepare($query);
     $stmt->bind_param("s", $date_filter);
@@ -51,29 +50,45 @@ if (isset($_GET['month']) && isset($_GET['year'])) {
     }
 
     // Exportation CSV
-if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=presences_' . $selected_month . '_' . $selected_year . '.csv');
-    
-    $output = fopen('php://output', 'w');
-    
-    // Écriture de l'en-tête
-    fputcsv($output, ['Date', 'UID', 'Nom', 'Prénom', 'Heure Scan'], ';');
-    
-    // Écriture des données
-    foreach ($presences_par_mois as $presence) {
-        fputcsv($output, [
-            $presence['date'], $presence['uid'],
-            $presence['nom'], $presence['prenom'],
-            $presence['heure_scan'],
-        ], ';');
+    if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=presences_' . $selected_month . '_' . $selected_year . '.csv');
+        
+        $output = fopen('php://output', 'w');
+        
+        // Écriture de l'en-tête
+        fputcsv($output, ['Date', 'UID', 'Nom', 'Prénom', 'Heure Scan'], ';');
+        
+        // Écriture des données
+        foreach ($presences_par_mois as $presence) {
+            fputcsv($output, [
+                $presence['date'], $presence['uid'],
+                $presence['nom'], $presence['prenom'],
+                $presence['heure_scan'],
+            ], ';');
+        }
+        
+        fclose($output);
+        exit();
     }
-    
-    fclose($output);
-    exit();
-}
 }
 
+// Ajout d'une présence
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] == 'ajouter_presence') {
+    $uid = $_POST['uid'];
+    $date_scan = $_POST['date_scan'];
+    $heure_scan = $_POST['heure_scan'];
+    
+    // Insérer la présence dans la base de données
+    $stmt = $conn->prepare("INSERT INTO presences (uid, date_scan, heure_scan) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $uid, $date_scan, $heure_scan);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Rediriger pour actualiser la page
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
 
 $conn->close();
 ?>
@@ -142,6 +157,35 @@ $conn->close();
 
     <a href="Entreprise.php?month=<?= htmlspecialchars($selected_month) ?>&year=<?= htmlspecialchars($selected_year) ?>&export=csv" class="btn-export">Exporter en CSV</a>
 <?php endif; ?>
+
+<h3>Ajouter une présence</h3>
+<form method="POST">
+    <input type="hidden" name="action" value="ajouter_presence">
+    
+    <label for="uid">Étudiant :</label>
+    <select name="uid" required>
+        <?php
+        // Récupérer la liste des étudiants
+        $conn = new mysqli($servername, $username, $password, $dbname, $port);
+        $students_sql = "SELECT uid, nom, prenom FROM etudiants ORDER BY nom";
+        $students_result = $conn->query($students_sql);
+        while ($row = $students_result->fetch_assoc()) { ?>
+            <option value="<?= htmlspecialchars($row['uid']) ?>">
+                <?= htmlspecialchars($row['nom']) ?> <?= htmlspecialchars($row['prenom']) ?>
+            </option>
+        <?php }
+        $conn->close();
+        ?>
+    </select>
+    
+    <label for="date_scan">Date :</label>
+    <input type="date" name="date_scan" value="<?= $selected_year . '-' . $selected_month . '-01' ?>" required>
+    
+    <label for="heure_scan">Heure :</label>
+    <input type="time" name="heure_scan" required>
+    
+    <button type="submit">Ajouter la présence</button>
+</form>
 
 </body>
 </html>
