@@ -1,19 +1,4 @@
 <?php
-session_start();
-
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION["user"]) || !isset($_SESSION["role"])) {
-    header("Location: login.html"); // Redirige vers la page de connexion
-    exit();
-}
-
-// Vérifier si l'utilisateur a le bon rôle
-if ($_SESSION["role"] !== "administrateur") {
-    echo "Accès refusé. Vous n'avez pas les permissions pour voir cette page.";
-    exit();
-}
-?>
-<?php
 session_start(); // Démarrer la session pour stocker les infos utilisateur
 
 // Connexion à la base de données
