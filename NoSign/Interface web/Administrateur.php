@@ -160,39 +160,7 @@ if (isset($_POST['import']) && isset($_FILES['csv_file'])) {
         echo "<p>Erreur lors du téléchargement du fichier.</p>";
     }
 }
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? null;
-    
-    if ($action == 'ajouter_presence') {
-        $uid = $_POST['uid'];
-        $date_scan = $_POST['date_scan'];
-        $heure_scan = $_POST['heure_scan'];
-        
-        $stmt = $conn->prepare("INSERT INTO presences (uid, date_scan, heure_scan) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $uid, $date_scan, $heure_scan);
-        $stmt->execute();
-        $stmt->close();
-        
-        header("Location: " . $_SERVER['PHP_SELF']);
-    }
-}
-
-$presences_sql = "SELECT p.id, e.uid, e.nom, e.prenom, p.heure_scan 
-                  FROM presences p 
-                  JOIN etudiants e ON p.uid = e.uid 
-                  WHERE p.date_scan = ? 
-                  ORDER BY p.heure_scan DESC";
-
-$presences_stmt = $conn->prepare($presences_sql);
-$presences_stmt->bind_param("s", $selected_date);
-$presences_stmt->execute();
-$presences_result = $presences_stmt->get_result();
-$presences_stmt->close();
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -206,8 +174,9 @@ $presences_stmt->close();
     <h2>Gestion des utilisateurs</h2>
     
     <form action="logout.php" method="POST" style="position: absolute; top: 10px; right: 10px;">
-    <button type="submit">Se déconnecter</button>
+        <button type="submit">Se déconnecter</button>
     </form>
+
     <h3>Ajouter un utilisateur</h3>
     <form method="POST">
         <input type="hidden" name="action" value="ajouter">
@@ -217,7 +186,7 @@ $presences_stmt->close();
         <select name="role">
             <option value="eleve">Élève</option>
             <option value="professeur">Professeur</option>
-            <option value="greta">greta</option>
+            <option value="greta">Greta</option>
             <option value="admin">Administrateur</option>
         </select>
         <button type="submit">Ajouter</button>
@@ -242,82 +211,60 @@ $presences_stmt->close();
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="action" value="modifier">
                         <input type="hidden" name="id" value="<?= $user['id'] ?>">
-                        <input type="text" name="nom" value="<?= htmlspecialchars($user['login']) ?>" required>
-                        <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required>
-                        <input type="password" name="new_password" placeholder="Nouveau mot de passe">
-                        <select name="role">
-                            <option value="eleve" <?= $user['role'] == 'eleve' ? 'selected' : '' ?>>Élève</option>
-                            <option value="professeur" <?= $user['role'] == 'professeur' ? 'selected' : '' ?>>Professeur</option>
-                            <option value="greta" <?= $user['role'] == 'greta' ? 'selected' : '' ?>>greta</option>
-                            <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrateur</option>
-                        </select>
                         <button type="submit">Modifier</button>
                     </form>
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="action" value="supprimer">
                         <input type="hidden" name="id" value="<?= $user['id'] ?>">
-                        <button type="submit" onclick="return confirm('Confirmer la suppression ?');">Supprimer</button>
+                        <button type="submit" onclick="return confirm('Confirmer la suppression de cet utilisateur ?');">Supprimer</button>
                     </form>
                 </td>
             </tr>
         <?php } ?>
     </table>
-
-    <h2>Ajouter des étudiants via un fichier CSV</h2>
-<form method="POST" enctype="multipart/form-data">
-    <label for="csv_file">Sélectionner le fichier CSV :</label>
-    <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
-    <button type="submit" name="import">Importer</button>
-</form>
-
-    <h2>Administration des présences</h2>
-
+    
+    <h3>Importation des étudiants depuis un fichier CSV</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="csv_file" required>
+        <button type="submit" name="import">Importer</button>
+    </form>
+    
+    <h3>Présences pour la date sélectionnée</h3>
     <form method="GET">
-    <label for="date">Sélectionner une date :</label>
-    <input type="date" name="date" id="date" required>
-    <button type="submit">Voir</button>
-</form>
-
-<h2>Ajouter une présence</h2>
-    <form method="POST">
-        <input type="hidden" name="action" value="ajouter_presence">
-        <label for="uid">Étudiant :</label>
-        <select name="uid" required>
-            <?php foreach ($students as $student) { ?>
-                <option value="<?= htmlspecialchars($student['uid']) ?>">
-                    <?= htmlspecialchars($student['nom'] . ' ' . $student['prenom']) ?>
-                </option>
-            <?php } ?>
-        </select>
-        <label for="date_scan">Date :</label>
-        <input type="date" name="date_scan" required>
-        <label for="heure_scan">Heure :</label>
-        <input type="time" name="heure_scan" required>
-        <button type="submit">Ajouter</button>
+        <label for="date">Sélectionner une date :</label>
+        <input type="date" name="date" value="<?= $selected_date ?>" required>
+        <button type="submit">Voir</button>
     </form>
 
-    <table>
+    <table border="1">
         <tr>
+            <th>ID</th>
             <th>UID</th>
             <th>Nom</th>
             <th>Prénom</th>
-            <th>Heure de scan</th>
-            <th>Action</th>
+            <th>Heure</th>
+            <th>Actions</th>
         </tr>
-        <?php while ($row = $presences_result->fetch_assoc()): ?>
+        <?php while ($row = $presences_result->fetch_assoc()) { ?>
             <tr>
+                <td><?= htmlspecialchars($row['id']) ?></td>
                 <td><?= htmlspecialchars($row['uid']) ?></td>
                 <td><?= htmlspecialchars($row['nom']) ?></td>
                 <td><?= htmlspecialchars($row['prenom']) ?></td>
                 <td><?= htmlspecialchars($row['heure_scan']) ?></td>
                 <td>
-                    <form method="POST" onsubmit="return confirm('Confirmer la suppression de cette présence ?');">
+                    <form method="POST" style="display:inline;">
                         <input type="hidden" name="delete_id" value="<?= $row['id'] ?>">
-                        <button type="submit">Supprimer</button>
+                        <button type="submit" onclick="return confirm('Confirmer la suppression de cette présence ?');">Supprimer</button>
                     </form>
                 </td>
             </tr>
-        <?php endwhile; ?>
+        <?php } ?>
     </table>
 </body>
 </html>
+
+<?php
+// Fermer la connexion à la base de données
+$conn->close();
+?>
