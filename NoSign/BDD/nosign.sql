@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : mer. 12 mars 2025 à 15:46
+-- Généré le : mer. 19 mars 2025 à 08:46
 -- Version du serveur : 11.5.2-MariaDB
 -- Version de PHP : 8.3.14
 
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `login` varchar(50) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `role` enum('professeur','entreprise','administrateur') NOT NULL,
+  `role` enum('professeur','greta','administrateur') NOT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `login` (`login`),
@@ -110,9 +110,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `login`, `password_hash`, `email`, `role`, `created_at`) VALUES
-(5, 'prof1', 'bc4b3efcaeefab8fbe6d4b20f3b9c865fd3d9aafad2bf2828e0f7149816aac30', 'karine.bergeron@etu.univ-grenoble-alpes.fr', 'professeur', '2025-03-10 15:22:12'),
+(5, 'prof1', 'e45e27fe4d5fbf6e328f0cf99933996640a4b30dbe3b241cc19a114f6e292c1f', 'karine.bergeron@etu.univ-grenoble-alpes.fr', 'professeur', '2025-03-10 15:22:12'),
 (3, 'admin', 'df78b0ea5ffe97ecc62dcf13b0776e6bd73f511d119966e8dd8025b84fccc7e7', 'admin@exemple.com', 'administrateur', '2025-02-05 10:14:30'),
-(6, 'JAY', 'bc4b3efcaeefab8fbe6d4b20f3b9c865fd3d9aafad2bf2828e0f7149816aac30', 'vincent.jay@koesio.com', 'entreprise', '2025-03-11 08:48:13');
+(6, 'JAY', 'bc4b3efcaeefab8fbe6d4b20f3b9c865fd3d9aafad2bf2828e0f7149816aac30', 'vincent.jay@koesio.com', 'greta', '2025-03-11 08:48:13');
 
 --
 -- Contraintes pour les tables déchargées

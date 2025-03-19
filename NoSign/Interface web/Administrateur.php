@@ -217,7 +217,7 @@ $presences_stmt->close();
         <select name="role">
             <option value="eleve">Élève</option>
             <option value="professeur">Professeur</option>
-            <option value="entreprise">Entreprise</option>
+            <option value="greta">greta</option>
             <option value="admin">Administrateur</option>
         </select>
         <button type="submit">Ajouter</button>
@@ -248,7 +248,7 @@ $presences_stmt->close();
                         <select name="role">
                             <option value="eleve" <?= $user['role'] == 'eleve' ? 'selected' : '' ?>>Élève</option>
                             <option value="professeur" <?= $user['role'] == 'professeur' ? 'selected' : '' ?>>Professeur</option>
-                            <option value="entreprise" <?= $user['role'] == 'entreprise' ? 'selected' : '' ?>>Entreprise</option>
+                            <option value="greta" <?= $user['role'] == 'greta' ? 'selected' : '' ?>>greta</option>
                             <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrateur</option>
                         </select>
                         <button type="submit">Modifier</button>

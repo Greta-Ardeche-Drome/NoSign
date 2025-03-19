@@ -41,8 +41,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 case "professeur":
                     header("Location: Professeur.php");
                     break;
-                case "entreprise":
-                    header("Location: Entreprise.php");
+                case "greta":
+                    header("Location: greta.php");
                     break;
                 case "administrateur":
                     header("Location: Administrateur.php");
