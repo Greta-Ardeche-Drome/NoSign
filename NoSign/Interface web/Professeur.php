@@ -184,6 +184,11 @@ if (isset($_GET['date'])) {
     <?php endwhile; ?>
 </table>
 
+<!-- Section d'export CSV pour la date courante -->
+<div style="margin: 20px 0;">
+    <a href="export_csv.php?date=<?= date('Y-m-d') ?>" class="btn-export">Exporter les présences du jour en CSV</a>
+</div>
+
 <h2>Consulter les présences d'un autre jour</h2>
 <form method="GET">
     <label for="date">Sélectionner une date :</label>
@@ -212,6 +217,11 @@ if (isset($_GET['date'])) {
             </tr>
         <?php endforeach; ?>
     </table>
+    
+    <!-- Bouton d'export CSV pour la date sélectionnée -->
+    <div style="margin: 20px 0;">
+        <a href="export_csv.php?date=<?= htmlspecialchars($selected_date) ?>" class="btn-export">Exporter en CSV</a>
+    </div>
 <?php endif; ?>
 
 
